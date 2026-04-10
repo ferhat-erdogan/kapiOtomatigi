@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kapı Otomatiği</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div id="custom-confirm" class="confirm-overlay hidden">
+        <div class="confirm-window">
+            <i id="confirm-icon" class="fas fa-question-circle"></i>
+            <h3 id="confirm-title">Onay</h3>
+            <p id="confirm-msg">Bu işlemi onaylıyor musunuz?</p>
+            <div class="confirm-actions">
+                <button id="confirm-cancel">İPTAL</button>
+                <button id="confirm-ok">TAMAM</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+        <div id="login-screen" class="container">
+            <div class="glass-card fade-in">
+                <div class="logo-area">
+                    <div class="icon-circle"><i class="fas fa-bolt"></i></div>
+                    <h2>Giriş <span>Yap</span></h2>
+                </div>
+                <form id="login-form">
+                    <div class="input-field">
+                        <i class="fas fa-at"></i>
+                        <input type="text" id="email" placeholder="E-posta veya kullanıcı adı" required autocomplete="email">
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="password" placeholder="Şifre" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" id="login-btn">Giriş Yap <i class="fas fa-arrow-right"></i></button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboard" class="container hidden">
+            <header class="glass-header slide-down">
+                <div class="user-pill">
+                    <div class="online-indicator"></div>
+                    <span id="user-display">YÜKLENİYOR...</span>
+                </div>
+                <div class="action-group">
+                    <button id="log-btn" title="Geçmiş" class="icon-btn"><i class="fas fa-history"></i></button>
+                    <button id="admin-btn" title="Yönetim" class="icon-btn hidden"><i class="fas fa-user-shield"></i></button>
+                    <button id="logout-btn" title="Çıkış" class="icon-btn logout"><i class="fas fa-power-off"></i></button>
+                </div>
+            </header>
+
+            <main class="fade-in">
+                <div class="control-center">
+                    <div class="device-label">
+                        <span class="status-badge">AKTİF</span>
+                        <h1>Kapı Otomatiği</h1>
+                    </div>
+                    
+                    <button id="trigger-btn" class="power-button">
+                        <div class="outer-ring"></div>
+                        <div class="inner-circle">
+                            <i class="fas fa-key"></i>
+                        </div>
+                            <br>
+                        <span class="btn-text">KAPIYI AÇ</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <div id="modal" class="modal-overlay hidden">
+            <div class="modal-window">
+                <div class="modal-header">
+                    <h2 id="modal-title">Başlık</h2>
+                    <button class="close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="modal-body" class="modal-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
