@@ -1,0 +1,83 @@
+name: 🔄 Supabase Servis Kontrol ve Repo Güncelleme
+
+# Node.js 24 kullanılması için
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TZ: Europe/Istanbul  # Tüm date komutları Türkiye saati ile
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Her gün 09:00 Türkiye saati
+  workflow_dispatch: # Manuel çalıştırma
+
+jobs:
+  gorev:
+    name: 🌐 Servis Kontrol ve Repo Güncelleme
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Repo'ya push atabilmek için gerekli
+
+    steps:
+      # 📥 Depoyu çekiyoruz
+      - name: 📥 Depoyu Çek
+        uses: actions/checkout@v4
+
+      # 🧰 JSON işlemek için jq paketini kur
+      - name: 🧰 jq Kurulumu
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      # 🚀 Supabase servislerini kontrol et ve log.txt dosyasını oluştur
+      - name: 📄 Log Dosyasını Güncelle
+        run: |
+          LOG_DOSYA=".github/log.txt"
+
+          # Mevcut log dosyasını temizle veya yoksa oluştur
+          echo "" > "$LOG_DOSYA"
+
+          # Güncelleme tarihini dosyanın en üstüne yaz (Türkiye saati)
+          TARIH=$(date +'%d.%m.%Y %H:%M:%S')
+          echo "🔄 Güncelleme Tarihi: $TARIH" >> "$LOG_DOSYA"
+          echo "════════════════════════════════" >> "$LOG_DOSYA"
+
+          BASARILI=0
+          HATALI=0
+
+          # JSON içindeki tüm projeleri sırayla kontrol et
+          while read -r proje; do
+            AD=$(echo $proje | jq -r '.name')   # Proje adı
+            URL=$(echo $proje | jq -r '.url')   # Proje URL'si
+
+            # GET isteği gönder ve HTTP status kodunu al
+            DURUM=$(curl -o /dev/null -s -w "%{http_code}" "$URL" --max-time 15 || echo "000")
+
+            if [ "$DURUM" -ge 200 ] && [ "$DURUM" -lt 500 ]; then
+              # Başarılı projeyi log'a yaz
+              echo "✅ $AD : AKTİF ($DURUM)" >> "$LOG_DOSYA"
+              BASARILI=$((BASARILI+1))
+            else
+              # Hatalı projeyi log'a yaz
+              echo "❌ $AD : HATA ($DURUM)" >> "$LOG_DOSYA"
+              HATALI=$((HATALI+1))
+            fi
+          done < <(jq -c '.[] | select(.url != null)' .github/supabase_urls.json)
+
+          # Log dosyasına özet bilgileri ekle
+          echo "════════════════════════════════" >> "$LOG_DOSYA"
+          echo "📊 Başarılı: $BASARILI | Hatalı: $HATALI" >> "$LOG_DOSYA"
+          echo "" >> "$LOG_DOSYA"
+
+          # Konsolda da log'u göster, action logs için
+          cat "$LOG_DOSYA"
+
+      # 🧠 Repo hareketliliğini korumak için boş commit at
+      # Commit mesajı sadece güncelleme tarihi içerir (TSİ)
+      - name: 🧠 Repo Hareketliliğini Koru
+        run: |
+          git config --global user.name "Sistem-Botu"
+          git config --global user.email "actions@github.com"
+
+          TARIH=$(date +'%d.%m.%Y %H:%M:%S')
+          git add .github/log.txt
+          git commit --allow-empty -m "🔄 Güncelleme Tarihi: $TARIH"
+          git push
